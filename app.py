@@ -1,8 +1,14 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-from models import db, User
+from models import db, User , Contact
 from flask_migrate import Migrate
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import csv
+import io
+from flask import send_file
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -141,9 +147,178 @@ def user_dashboard():
         return redirect('/login')
     
     user = User.query.filter_by(email=session['email']).first()
-    # messages = Contact.query.filter_by(user_id=user.id).all()
-    # message_count = len(messages)
-    return render_template('user_dashboard.html' , user=user)
+    messages = Contact.query.filter_by(user_id=user.id).all()
+    message_count = len(messages)
+    return render_template('user_dashboard.html' , user=user,messages=messages,message_count=message_count)
+
+@app.route('/contact', methods=['GET', 'POST'])
+def contact():
+    errors = {}
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        address = request.form.get('address', '').strip()
+        phone = request.form.get('phone', '').strip()
+        message = request.form.get('message', '').strip()
+    
+
+        # Simple validation
+        if not name:
+            errors['name'] = 'Name is required.'
+        if not email:
+            errors['email'] = 'Email is required.'
+        if not message:
+            errors['message'] = 'Message is required.'
+
+        if not errors:
+            user = None
+            if 'email' in session:
+                user = User.query.filter_by(email=session['email']).first()
+            new_contact = Contact(
+                name=name,
+                email=email,
+                address=address,
+                phone=phone,
+                message=message,
+                user_id=user.id if user else None
+                 
+            )
+            db.session.add(new_contact)
+            db.session.commit()
+
+            send_email_to_user(
+            name=name,
+            to_email=email
+           )
+
+            send_email_to_admin(
+              name=name,
+              email=email,
+              phone=phone,
+              message=message
+        )
+
+            # flash('Your message has been sent successfully.', 'success')
+            return redirect(url_for('user_dashboard'))
+
+    return render_template('contact.html', errors=errors)
+
+@app.route('/admin/messages')
+def admin_messages():
+    if 'email' not in session:
+        flash("Please log in first.", "danger")
+        return redirect('/login')
+    messages = Contact.query.order_by(Contact.id.desc()).all()
+    return render_template('admin_messages.html', messages=messages)
+
+@app.route('/delete_message/<int:message_id>', methods=['GET'])
+def delete_message(message_id):
+    message = Contact.query.get_or_404(message_id)
+    db.session.delete(message)
+    db.session.commit()
+    flash('Message deleted successfully.', 'success')
+    return redirect(url_for('admin_messages')) 
+
+@app.route('/update_message/<int:message_id>', methods=['GET', 'POST'])
+def update_message(message_id):
+    message = Contact.query.get_or_404(message_id)
+    errors = {}
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        address = request.form.get('address', '').strip()
+        phone = request.form.get('phone', '').strip()
+        message_text = request.form.get('message', '').strip()
+
+      
+        if not name:
+            errors['name'] = 'Name is required.'
+        if not email:
+            errors['email'] = 'Email is required.'
+        if not message_text:
+            errors['message'] = 'Message is required.'
+
+        if not errors:
+            message.name = name
+            message.email = email
+            message.address = address
+            message.phone = phone
+            message.message = message_text
+            db.session.commit()
+            # flash('Message updated successfully.', 'success')
+            return redirect(url_for('admin_messages'))  
+
+        return render_template('update_message.html', message=message, errors=errors)
+
+    return render_template('update_message.html', message=message, errors=errors)
+
+
+
+def send_email_to_user(name, to_email):
+    subject = "Thank you for contacting us"
+    body = f"""
+    Hi {name},
+
+    Thanks for reaching out to us. We have received your message and will get back to you soon.
+
+    Best regards,
+    CRUD Team
+    """
+    send_email(to_email, subject, body)
+
+
+def send_email_to_admin(name, email, phone, message):
+    subject = "New Contact Form Submission"
+    body = f"""
+    A new contact form has been submitted:
+
+    Name: {name}
+    Email: {email}
+    Phone: {phone}
+    Message:
+    {message}
+    """
+    admin_email = "sanauarh@gmail.com" 
+    send_email(admin_email, subject, body)
+
+def send_email(to_email, subject, body):
+    sender_email = "sanauarh@gmail.com"
+    sender_password = "kftpwzpgeymcwutj" 
+
+    msg = MIMEMultipart()
+    msg["From"] = sender_email
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body, "plain"))
+
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587) as smtp:
+            smtp.starttls()
+            smtp.login(sender_email, sender_password)
+            smtp.send_message(msg)
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+
+
+@app.route('/admin/export')
+def export_messages():
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    writer.writerow(['ID', 'Name', 'Email', 'Message'])
+    messages = Contact.query.all()
+    for msg in messages:
+        writer.writerow([msg.id, msg.name, msg.email,msg.phone, msg.message])
+
+    output.seek(0)
+    return send_file(
+        io.BytesIO(output.getvalue().encode()),
+        mimetype='text/csv',
+        download_name='contact_messages.csv',
+        as_attachment=True
+    )
 
 
 

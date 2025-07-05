@@ -54,13 +54,13 @@
       <div class="card-body">
         <h5 class="card-title">Manage the system</h5>
         <p class="card-text">Here you can manage users, messages, and more.</p>
-        <a href="" class="btn btn-primary me-2">View Messages</a>
+        <a href="{{ url_for('admin_messages') }}" class="btn btn-primary me-2">View Messages</a>
         <a href="/logout" class="btn btn-danger">Logout</a>
       </div>
     </div>
 
     <!-- User List Table -->
-    <!-- <h4 class="mt-4 mb-3 text-center">Registered Users</h4>
+     <h4 class="mt-4 mb-3 text-center">Registered Users</h4>
     <div class="card p-3">
       <div class="table-responsive">
         <table class="table table-striped align-middle mb-0">
@@ -84,7 +84,7 @@
           </tbody>
         </table>
       </div>
-    </div> -->
+    </div>
 
   </div>
 </body>

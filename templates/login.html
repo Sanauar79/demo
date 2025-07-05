@@ -1,9 +1,101 @@
-<!doctype html>
-<title>Login</title>
-<h2>Login</h2>
-<form method="POST">
-    Username: <input type="text" name="username" required><br><br>
-    Password: <input type="password" name="password" required><br><br>
-    <input type="submit" value="Login">
-</form>
-<a href="{{ url_for('register') }}">Register here</a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, #1f1c2c, #928dab);
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 40px;
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: white;
+      width: 350px;
+      transform: perspective(1000px) rotateY(0deg);
+      transition: transform 0.5s ease;
+    }
+
+    .card:hover {
+      transform: perspective(1000px) rotateY(5deg);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    input::placeholder {
+      color: #ddd;
+    }
+
+    input[type="submit"] {
+      width: 100%;
+      padding: 10px;
+      background: #6a11cb;
+      background: linear-gradient(to right, #2575fc, #6a11cb);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    input[type="submit"]:hover {
+      background: linear-gradient(to right, #6a11cb, #2575fc);
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 15px;
+    }
+
+    .footer a {
+      color: #ccc;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <form method="POST">
+    <div class="card">
+      <h2>Login</h2>
+      <input type="text" name="username" placeholder="Username" required>
+      <input type="password" name="password" placeholder="Password" required>
+      <input type="submit" value="Login">
+      <div class="footer">
+        <p>Don't have an account? <a href="{{ url_for('register') }}">Register</a></p>
+      </div>
+    </div>
+  </form>
+</body>
+</html>

@@ -1,102 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Register</title>
-  <style>
-    /* Same styles as login.html */
+  <title>Register page</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<style>
     body {
-      margin: 0;
-      background: linear-gradient(135deg, #1f1c2c, #928dab);
-      font-family: 'Segoe UI', sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      background: linear-gradient(135deg, #c3cfe2, #dde9f6);
       height: 100vh;
-      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-
-    .card {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 15px;
-      padding: 40px;
-      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      color: white;
-      width: 350px;
-      transform: perspective(1000px) rotateY(0deg);
-      transition: transform 0.5s ease;
+    .register-card{
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      padding: 2rem;
+      transform: perspective(1000px);
+      transition: transform 0.3s ease;
     }
-
-    .card:hover {
-      transform: perspective(1000px) rotateY(5deg);
+    .register-card:hover {
+      transform: perspective(1000px) rotateX(8deg) rotateY(4deg);
     }
-
+    .form-control {
+      border-radius: 10px;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    .btn {
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
     h2 {
       text-align: center;
-      margin-bottom: 25px;
-    }
-
-    input[type="text"],
-    input[type="password"] {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 20px;
-      background: rgba(255, 255, 255, 0.2);
-      border: none;
-      border-radius: 8px;
-      color: #fff;
-      font-size: 16px;
-    }
-
-    input::placeholder {
-      color: #ddd;
-    }
-
-    input[type="submit"] {
-      width: 100%;
-      padding: 10px;
-      background: #ff416c;
-      background: linear-gradient(to right, #ff4b2b, #ff416c);
-      border: none;
-      border-radius: 8px;
-      color: #fff;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-
-    input[type="submit"]:hover {
-      background: linear-gradient(to right, #ff416c, #ff4b2b);
-    }
-
-    .footer {
-      text-align: center;
-      margin-top: 15px;
-    }
-
-    .footer a {
-      color: #ccc;
-      text-decoration: none;
-    }
-
-    .footer a:hover {
-      color: #fff;
+      margin-bottom: 1.5rem;
+      font-weight: bold;
+      color: #333;
     }
   </style>
+
 </head>
 <body>
-  <form method="POST">
-    <div class="card">
-      <h2>Register</h2>
-      <input type="text" name="username" placeholder="Username" required>
-      <input type="password" name="password" placeholder="Password" required>
-      <input type="submit" value="Register">
-      <div class="footer">
-        <p>Already have an account? <a href="{{ url_for('login') }}">Login</a></p>
+
+<div class="container">
+    <div class=" row justify-content-center">
+        <div class="col-sm-6 mt-4">
+            <div class="register-card">
+            <h2>Register form</h2>
+
+           {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+            
+
+            <form method="POST" action="/register">
+  <div class="mb-3">
+    <label for="name" class="form-label">Name:</label>
+    <input type="text" class="form-control {% if errors.get('name') %}is-invalid{% endif %}" name="name" id="name" value="{{ request.form.name }}">
+    {% if errors.get('name') %}
+      <div class="invalid-feedback">{{ errors['name'] }}</div>
+    {% endif %}
+  </div>
+
+  <div class="mb-3">
+    <label for="email" class="form-label">Email:</label>
+    <input type="email" class="form-control {% if errors.get('email') %}is-invalid{% endif %}" name="email" id="email" value="{{ request.form.email }}">
+    {% if errors.get('email') %}
+      <div class="invalid-feedback">{{ errors['email'] }}</div>
+    {% endif %}
+  </div>
+
+  <div class="mb-3">
+    <label for="password" class="form-label">Password:</label>
+    <input type="password" class="form-control {% if errors.get('password') %}is-invalid{% endif %}" name="password" id="password">
+    {% if errors.get('password') %}
+      <div class="invalid-feedback">{{ errors['password'] }}</div>
+    {% endif %}
+  </div>
+
+  <button type="submit" class="btn btn-primary">Register</button>
+  <p class="text-center">
+                 Already have an account? <a href="{{ url_for('login') }}">Sign In</a>
+                 </p>
+</form>
+
+            </div>
+        </div>
     </div>
-  </form>
+  
+</div>
+
 </body>
 </html>

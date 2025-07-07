@@ -9,6 +9,8 @@ from email.mime.multipart import MIMEMultipart
 import csv
 import io
 from flask import send_file
+from decorators import login_required
+from flask import make_response
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -28,6 +30,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 migrate = Migrate(app, db)
+
+
+
 
 @app.route('/')
 def home():
@@ -65,7 +70,7 @@ def login():
                 return redirect('/user_dashboard')
         else:
             flash('Invalid email or password.', 'danger')
-    return render_template('login.html',errors=errors)
+    return render_template('login.html',errors={})
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -130,32 +135,45 @@ def confirm_email(token):
     return redirect('/login')
 
 @app.route('/admin_dashboard')
+@login_required(role='admin')
 def admin_dashboard():
     if 'email' not in session or session.get('role') != 'admin':
         flash('Access denied.', 'danger')
         return redirect('/login')
-    
+
     user = User.query.filter_by(email=session['email']).first()
     users = User.query.all()
-    return render_template('admin_dashboard.html', user=user , users=users)
+    enquiries = Contact.query.all()
+    total_users = len(users)
+    total_enquiries = len(enquiries)
+    messages = Contact.query.order_by(Contact.id.desc()).all()
+    return   render_template('admin_dashboard.html', user=user, users=users,total_users=total_users,total_enquiries=total_enquiries,messages=messages)
+    
 
 
 @app.route('/user_dashboard')
+@login_required(role='user')
 def user_dashboard():
     if 'email' not in session or session.get('role') != 'user':
         flash('Access denied.', 'danger')
         return redirect('/login')
-    
+
     user = User.query.filter_by(email=session['email']).first()
     messages = Contact.query.filter_by(user_id=user.id).all()
     message_count = len(messages)
-    return render_template('user_dashboard.html' , user=user,messages=messages,message_count=message_count)
+    return  render_template('user_dashboard.html', user=user, messages=messages, message_count=message_count)
+
+    
+
 
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
-    errors = {}
+      errors = {}
+      if 'email' not in session:
+        flash("Please log in first.", "danger")
+        return redirect('/login')
 
-    if request.method == 'POST':
+      if request.method == 'POST':
         name = request.form.get('name', '').strip()
         email = request.form.get('email', '').strip()
         address = request.form.get('address', '').strip()
@@ -202,7 +220,7 @@ def contact():
             # flash('Your message has been sent successfully.', 'success')
             return redirect(url_for('user_dashboard'))
 
-    return render_template('contact.html', errors=errors)
+      return render_template('contact.html', errors=errors)
 
 @app.route('/admin/messages')
 def admin_messages():
@@ -324,11 +342,21 @@ def export_messages():
 
 @app.route('/logout')
 def logout():
-    session.pop('user', None)
+    session.clear()
+    flash('You have been logged out.', 'success')
     return redirect(url_for('login'))
+
+@app.after_request
+def add_no_cache_headers(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
 
 # ✅ Correct place to initialize the DB and run the server
 if __name__ == '__main__':
-    with app.app_context():
+     app.run(host='0.0.0.0', port=10000)
+     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+     app.run(debug=True)
